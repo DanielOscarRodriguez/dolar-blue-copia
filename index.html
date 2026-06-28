@@ -165,4 +165,191 @@
     }
     .btn {
       width: 100%;
-      padding: 
+      padding: 14px;
+      background: #0055A4;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn:hover {
+      background: #003d7a;
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(0, 85, 164, 0.3);
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+    .btn-salir {
+      width: 100%;
+      padding: 14px;
+      background: #e53e3e;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    .btn-salir:hover {
+      background: #c53030;
+      transform: scale(1.02);
+      box-shadow: 0 4px 15px rgba(229, 62, 62, 0.3);
+    }
+    .btn-salir:active {
+      transform: scale(0.98);
+    }
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 2px solid #e2e8f0;
+      background: #f8fafc;
+      padding: 16px 20px;
+      margin: 20px -32px -40px -32px;
+      border-radius: 0 0 24px 24px;
+    }
+    .footer .powered {
+      font-size: 0.6rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .footer .nombre {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    @media (max-width: 420px) {
+      .container {
+        padding: 28px 20px;
+      }
+      .header h1 {
+        font-size: 1.6rem;
+      }
+      .card .value {
+        font-size: 1.5rem;
+      }
+      .footer {
+        margin: 20px -20px -28px -20px;
+        padding: 16px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="app">
+    <div class="header">
+      <h1>Dolar Blue</h1>
+      <p>Cotizacion en Argentina</p>
+    </div>
+    <div id="auth-section">
+      <div class="bienvenida">Bienvenido, <strong>Daniel</strong></div>
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; font-weight: 600; color: #334155; margin-bottom: 6px; font-size: 0.9rem;">Palabra Secreta</label>
+        <input type="password" id="secretoInput" placeholder="Ingresa tu palabra secreta" 
+               style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; transition: all 0.3s;">
+      </div>
+      <button class="btn" onclick="iniciarSesion()">Ver Cotizacion</button>
+      <div id="mensaje" style="margin-top: 15px; text-align: center; font-weight: 500;"></div>
+    </div>
+    <div id="cotizacion-section" style="display: none;">
+      <div class="badge" id="badgeUser">Autenticacion exitosa</div>
+      <div class="grid">
+        <div class="card compra">
+          <div class="label">Compra</div>
+          <div class="value" id="precioCompra">-</div>
+        </div>
+        <div class="card venta">
+          <div class="label">Venta</div>
+          <div class="value" id="precioVenta">-</div>
+        </div>
+        <div class="card promedio">
+          <div class="label">Promedio</div>
+          <div class="value" id="precioPromedio">-</div>
+        </div>
+      </div>
+      <div class="fecha" id="fechaActualizacion">Actualizando...</div>
+      <button class="btn" onclick="actualizarCotizacion()">Actualizar cotizacion</button>
+      <button class="btn-salir" onclick="cerrarSesion()">Cerrar sesion</button>
+    </div>
+    <div class="footer">
+      <div class="powered">powered by</div>
+      <div class="nombre">Daniel Oscar Rodriguez</div>
+    </div>
+  </div>
+  <script>
+    const DNI_FIJO = "24780998";
+    async function validarSecretoConAPI(dni, secreto) {
+      try {
+        const respuesta = await fetch(`https://api-desarrollo-aplicaciones.vercel.app/api/alumnos/${dni}`);
+        const json = await respuesta.json();
+        return json && json.token === secreto;
+      } catch (error) {
+        console.error('Error al validar:', error);
+        return false;
+      }
+    }
+    async function obtenerCotizacion() {
+      const respuesta = await fetch('https://dolarapi.com/v1/dolares/blue');
+      return await respuesta.json();
+    }
+    async function iniciarSesion() {
+      const secreto = document.getElementById('secretoInput').value.trim();
+      const mensaje = document.getElementById('mensaje');
+      if (!secreto) {
+        mensaje.style.color = '#e53e3e';
+        mensaje.textContent = 'Ingresa la Palabra Secreta';
+        return;
+      }
+      mensaje.style.color = '#3182ce';
+      mensaje.textContent = 'Verificando...';
+      const valido = await validarSecretoConAPI(DNI_FIJO, secreto);
+      if (valido) {
+        mensaje.style.color = '#38a169';
+        mensaje.textContent = 'Autenticacion exitosa';
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('cotizacion-section').style.display = 'block';
+        await actualizarCotizacion();
+      } else {
+        mensaje.style.color = '#e53e3e';
+        mensaje.textContent = 'Palabra Secreta incorrecta';
+      }
+    }
+    async function actualizarCotizacion() {
+      try {
+        const data = await obtenerCotizacion();
+        const promedio = (data.compra + data.venta) / 2;
+        const fecha = new Date(data.fechaActualizacion);
+        document.getElementById('precioCompra').textContent = '$' + data.compra;
+        document.getElementById('precioVenta').textContent = '$' + data.venta;
+        document.getElementById('precioPromedio').textContent = '$' + promedio.toFixed(2);
+        document.getElementById('fechaActualizacion').textContent = 
+          'Actualizado: ' + fecha.toLocaleString('es-AR');
+        document.getElementById('badgeUser').textContent = 'Autenticacion exitosa';
+      } catch (error) {
+        alert('Error al obtener cotizacion: ' + error.message);
+      }
+    }
+    function cerrarSesion() {
+      document.getElementById('auth-section').style.display = 'block';
+      document.getElementById('cotizacion-section').style.display = 'none';
+      document.getElementById('secretoInput').value = '';
+      document.getElementById('mensaje').textContent = '';
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        const authSection = document.getElementById('auth-section');
+        if (authSection.style.display !== 'none') {
+          iniciarSesion();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
